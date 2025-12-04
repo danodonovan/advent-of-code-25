@@ -92,24 +92,64 @@ def get_neighbours(grid, row, col):
     ]
 
 
-def solution_1(grid):
+def is_accessible(grid, row, col) -> bool:
     max_neighbour_rolls = 4
+    nbors = get_neighbours(grid, row, col)
+
+    # is a roll
+    if nbors[1][1] == "@":
+        # count nbor rolls
+        roll_count = sum([1 for nbor_row in nbors for roll in nbor_row if roll == "@"])
+        # not including the center roll
+        roll_count -= 1
+
+        return roll_count < max_neighbour_rolls
+
+    else:
+        # raise ValueError("not a roll")
+        return False
+
+    return False
+
+
+def solution_1(grid):
     accessible_rolls_count = 0
     for row in range(len(grid)):
         for col in range(len(grid[0])):
-            nbors = get_neighbours(grid, row, col)
 
-            # is a roll
-            if nbors[1][1] == "@":
-                # count nbor rolls
-                roll_count = sum([1 for nbor_row in nbors for roll in nbor_row if roll == "@"])
-                # not including the center roll
-                roll_count -= 1
-
-                if roll_count < max_neighbour_rolls:
-                    accessible_rolls_count += 1
+            if is_accessible(grid, row, col):
+                accessible_rolls_count += 1
 
     return accessible_rolls_count
+
+
+def remove_rolls(grid):
+
+    def replace_str_index(text, index, replacement):
+        return '%s%s%s'%(text[:index], replacement, text[index+1:])
+
+
+    replace_count = 0
+    new_grid = grid.copy()
+    for row in range(len(grid)):
+        for col in range(len(grid[0])):
+            if is_accessible(grid, row, col):
+                new_grid[row] = replace_str_index(new_grid[row], col, ".")
+                replace_count += 1
+    return new_grid, replace_count
+
+
+def solution_2(grid):
+    total_replace_count = 0
+    while True:
+        new_grid, replace_count = remove_rolls(grid)
+        total_replace_count += replace_count
+
+        print_grid(new_grid)
+        grid = new_grid.copy()
+        if replace_count == 0:
+            break
+    return total_replace_count
 
 
 if __name__ == "__main__":
@@ -121,7 +161,14 @@ if __name__ == "__main__":
     assert result == solution
     print(f"Result solution 1: {result}")
 
-    print(input)
-    part_1_result = solution_1(input)
-    print(f"Result part I solution 1: {part_1_result}")
+    # print(input)
+    # part_1_result = solution_1(input)
+    # print(f"Result part I solution 1: {part_1_result}")
 
+    result = solution_2(TEST_INPUT)
+    print(f"Result solution 2: {result}")
+    assert result == 43
+
+    print(input)
+    part_2_result = solution_2(input)
+    print(f"Result solution 2: {part_2_result}")
