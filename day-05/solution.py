@@ -16,7 +16,9 @@ TEST_INPUT: str = """
 11
 17
 32
-""".strip().split("\n")
+""".strip().split(
+    "\n"
+)
 
 
 INPUT: str = Path("puzzle.txt").read_text().strip().split("\n")
@@ -42,21 +44,43 @@ def parse(input):
 
 def find_fresh_ingredients(fresh_ranges):
     fresh_ranges = list(map(lambda line: list(map(int, line.split("-"))), fresh_ranges))
-    fresh_ranges = sorted(fresh_ranges, key=lambda _range: _range[0])
+    fresh_ranges = sorted(fresh_ranges, key=lambda _range: (_range[0], _range[1]))
 
     while True:
         new_ranges = []
 
+        no_overlaps = True
+        skip_next = False
         for (a_start, a_end), (b_start, b_end) in pairwise(fresh_ranges):
-            no_overlaps = True
+            if skip_next:
+                skip_next = False
+                continue
 
-            if a_end < b_start:
+            if a_end < b_start and a_start != b_start and a_end != b_end:
                 new_ranges.append([a_start, a_end])
+
+            elif a_start == b_start and a_end < b_end:
+                no_overlaps = False
+                skip_next = True
+                new_ranges.append([a_start, b_end])
+
+            elif a_end == b_end and a_start < b_start:
+                no_overlaps = False
+                skip_next = True
+                new_ranges.append([a_start, a_end])
+
             else:
                 no_overlaps = False
+                skip_next = True
                 new_ranges.append([min(a_start, b_start), max(a_end, b_end)])
+        else:
+            if not skip_next:
+                new_ranges.append([b_start, b_end])
 
         if no_overlaps:
+            for (a_start, a_end), (b_start, b_end) in pairwise(fresh_ranges):
+                if not ((a_start < b_start) and (a_end < b_end)):
+                    raise Exception("Ranges are not sorted properly")
             break
         else:
             fresh_ranges = new_ranges.copy()
@@ -64,22 +88,23 @@ def find_fresh_ingredients(fresh_ranges):
     return fresh_ranges
 
 
-def sum_fresh(fresh_ingredients_ranged, available_ingredients):
+def sum_fresh(fresh_ingredients_ranges, available_ingredients):
     ingredients = set(map(int, available_ingredients))
 
-    result = set([
-        ingredient
-        for fr_start, fr_stop in fresh_ingredient_ranges
-        for ingredient in ingredients
-        if fr_start <= ingredient <= fr_stop
-    ])
+    result = set(
+        [
+            ingredient
+            for fr_start, fr_stop in fresh_ingredient_ranges
+            for ingredient in ingredients
+            if fr_start <= ingredient <= fr_stop
+        ]
+    )
 
     return len(result)
 
 
-
 if __name__ == "__main__":
-    # test result should be 3
+    # part 1 test result should be 3
     # input = TEST_INPUT
     # part 1 result should be 865
     input = INPUT
@@ -95,3 +120,6 @@ if __name__ == "__main__":
 
     sum_fresh = sum_fresh(fresh_ingredient_ranges, available_ingredients)
     print(f"{sum_fresh} available ingredients are fresh")
+
+    count = sum([abs((end + 1) - start) for start, end in fresh_ingredient_ranges])
+    print(f"A total of {count} ingredients are fresh")
