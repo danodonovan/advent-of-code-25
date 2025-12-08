@@ -87,3 +87,34 @@ sizes = sorted([len(junctions) for junctions in circuits.values()], reverse=True
 result = math.prod(sizes[:3], start=1)
 
 print(result, sum(sizes))
+
+# part II
+circuits = defaultdict(set)
+rev_circuits = dict()
+for i, junction in enumerate(array.tolist()):
+    junction = tuple(junction)
+    circuits[i].add(junction)
+    rev_circuits[junction] = i
+
+
+for i, (a, b) in enumerate(sorted_closest_junctions, start=1):
+    print(i, a, b)
+    a, b = tuple(map(int, a)), tuple(map(int, b))
+
+    for circuit, junctions in circuits.items():
+        if a in junctions:
+            circuit_a = circuit
+        if b in junctions:
+            circuit_b = circuit
+
+    for junction in circuits[circuit_a] | circuits[circuit_b]:
+        rev_circuits[junction] = circuit_a
+
+    circuits = defaultdict(set)
+    for junction, circuit in rev_circuits.items():
+        circuits[circuit].add(junction)
+
+    if len(circuits) == 1:
+        break
+
+print(f"extension cable length: {a[0] * b[0]}")
